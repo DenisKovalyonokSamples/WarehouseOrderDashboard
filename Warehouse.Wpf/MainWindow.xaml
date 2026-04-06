@@ -3,10 +3,68 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:Warehouse.Wpf"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
-    <Grid Margin="16">
-        <TextBlock Text="WPF Client Shell" FontSize="24" />
-    </Grid>
+        Title="Warehouse Operator Console" Height="720" Width="1200">
+    <DockPanel Margin="10">
+        <StackPanel Orientation="Horizontal" DockPanel.Dock="Top" Margin="0,0,0,8">
+            <TextBlock Text="Search" VerticalAlignment="Center" Margin="0,0,8,0" />
+            <TextBox Width="220" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,8,0" />
+            <Button Content="Refresh Orders" Command="{Binding RefreshOrdersCommand}" Margin="0,0,8,0" />
+            <Button Content="Create Picking Task" Command="{Binding CreatePickingTaskCommand}" Margin="0,0,8,0" />
+            <Button Content="Refresh Dashboard" Command="{Binding RefreshDashboardCommand}" />
+        </StackPanel>
+
+        <TabControl>
+            <TabItem Header="Orders">
+                <DataGrid x:Name="OrdersGrid"
+                          ItemsSource="{Binding Orders}"
+                          AutoGenerateColumns="False"
+                          SelectionMode="Extended"
+                          SelectionChanged="OrdersGrid_OnSelectionChanged"
+                          EnableRowVirtualization="True"
+                          VirtualizingPanel.IsVirtualizing="True"
+                          VirtualizingPanel.VirtualizationMode="Recycling">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Order #" Binding="{Binding OrderNumber}" Width="*" />
+                        <DataGridTextColumn Header="Customer" Binding="{Binding CustomerName}" Width="2*" />
+                        <DataGridTextColumn Header="Warehouse" Binding="{Binding WarehouseName}" Width="2*" />
+                        <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="*" />
+                        <DataGridTextColumn Header="Lines" Binding="{Binding LineCount}" Width="Auto" />
+                        <DataGridTextColumn Header="Created" Binding="{Binding CreatedAt}" Width="2*" />
+                    </DataGrid.Columns>
+                </DataGrid>
+            </TabItem>
+
+            <TabItem Header="Stock">
+                <DataGrid ItemsSource="{Binding Stock}"
+                          AutoGenerateColumns="False"
+                          IsReadOnly="True"
+                          EnableRowVirtualization="True"
+                          VirtualizingPanel.IsVirtualizing="True"
+                          VirtualizingPanel.VirtualizationMode="Recycling">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="SKU" Binding="{Binding ItemSku}" Width="*" />
+                        <DataGridTextColumn Header="Item" Binding="{Binding ItemName}" Width="2*" />
+                        <DataGridTextColumn Header="Warehouse" Binding="{Binding WarehouseName}" Width="2*" />
+                        <DataGridTextColumn Header="Available" Binding="{Binding AvailableQuantity}" Width="*" />
+                        <DataGridTextColumn Header="Reserved" Binding="{Binding ReservedQuantity}" Width="*" />
+                        <DataGridCheckBoxColumn Header="Shortage" Binding="{Binding HasShortage}" Width="Auto" />
+                    </DataGrid.Columns>
+                </DataGrid>
+            </TabItem>
+
+            <TabItem Header="Dashboard">
+                <StackPanel Margin="10">
+                    <TextBlock Text="Today's KPIs" FontSize="20" FontWeight="SemiBold" Margin="0,0,0,8" />
+                    <TextBlock Text="{Binding DashboardSummary}" TextWrapping="Wrap" FontSize="14" />
+                </StackPanel>
+            </TabItem>
+        </TabControl>
+
+        <StatusBar DockPanel.Dock="Bottom">
+            <StatusBarItem>
+                <TextBlock Text="{Binding StatusText}" />
+            </StatusBarItem>
+        </StatusBar>
+    </DockPanel>
 </Window>

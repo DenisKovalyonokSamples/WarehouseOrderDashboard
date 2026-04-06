@@ -1,17 +1,28 @@
 using Microsoft.EntityFrameworkCore;
-using Warehouse.Infrastructure;
 using Warehouse.Application.Services;
+using Warehouse.Infrastructure;
+using Warehouse.Infrastructure.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddScoped<IClock, SystemClock>();
-builder.Services.AddScoped<Warehouse.Application.Services.IAppService, Warehouse.Application.Services.AppService>();
-builder.Services.AddDbContext<Warehouse.Infrastructure.AppDbContext>(opt =>
-    opt.UseInMemoryDatabase("WarehouseDb")); // replace with UseOracle(...) in real deployment
+
+var oracleConnectionString = builder.Configuration.GetConnectionString("Oracle");
+if (!string.IsNullOrWhiteSpace(oracleConnectionString))
+{
+    builder.Services.AddDbContext<AppDbContext>(opt => opt.UseOracle(oracleConnectionString));
+}
+else
+{
+    builder.Services.AddDbContext<AppDbContext>(opt => opt.UseInMemoryDatabase("WarehouseDb"));
+}
+
+builder.Services.AddScoped<IOrderWorkflowService, OrderWorkflowService>();
+builder.Services.AddProblemDetails();
 
 var app = builder.Build();
+app.UseExceptionHandler();
 app.UseSwagger();
 app.UseSwaggerUI();
 app.MapControllers();
