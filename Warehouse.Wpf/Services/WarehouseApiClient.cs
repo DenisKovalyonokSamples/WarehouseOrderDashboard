@@ -1,5 +1,6 @@
 using System.Net.Http;
 using System.Net.Http.Json;
+using System.Text.Json;
 using Warehouse.Wpf.Models;
 
 namespace Warehouse.Wpf.Services;
@@ -42,9 +43,36 @@ public sealed class WarehouseApiClient(HttpClient httpClient) : IWarehouseApiCli
     public async Task<PickingTaskDto> CreatePickingTaskAsync(IReadOnlyCollection<int> orderIds, CancellationToken cancellationToken)
     {
         var httpResponse = await _httpClient.PostAsJsonAsync("api/picking-tasks", new { orderIds }, cancellationToken);
-        httpResponse.EnsureSuccessStatusCode();
+
+        if (!httpResponse.IsSuccessStatusCode)
+        {
+            var content = await httpResponse.Content.ReadAsStringAsync(cancellationToken);
+
+            try
+            {
+                var problem = JsonSerializer.Deserialize<ApiProblemDetails>(content, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+                if (!string.IsNullOrWhiteSpace(problem?.Title))
+                {
+                    throw new InvalidOperationException(problem.Title);
+                }
+            }
+            catch (JsonException)
+            {
+            }
+
+            throw new HttpRequestException($"Create picking task failed with status code {(int)httpResponse.StatusCode}.");
+        }
 
         return await httpResponse.Content.ReadFromJsonAsync<PickingTaskDto>(cancellationToken: cancellationToken)
             ?? new PickingTaskDto();
+    }
+
+    private sealed class ApiProblemDetails
+    {
+        public string? Title { get; set; }
     }
 }

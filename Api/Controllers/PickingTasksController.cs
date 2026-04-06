@@ -17,8 +17,19 @@ public sealed class PickingTasksController(IOrderWorkflowService service) : Cont
     [HttpPost]
     public async Task<ActionResult<PickingTaskDto>> Create([FromBody] CreatePickingTaskRequest request, CancellationToken cancellationToken)
     {
-        var result = await service.CreatePickingTaskAsync(request, cancellationToken);
-        return Ok(result);
+        try
+        {
+            var result = await service.CreatePickingTaskAsync(request, cancellationToken);
+            return Ok(result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new ProblemDetails { Title = ex.Message, Status = StatusCodes.Status400BadRequest });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new ProblemDetails { Title = ex.Message, Status = StatusCodes.Status404NotFound });
+        }
     }
 
     /// <summary>

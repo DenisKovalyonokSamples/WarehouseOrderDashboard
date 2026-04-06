@@ -204,11 +204,14 @@ public sealed class OrderWorkflowService(AppDbContext dbContext) : IOrderWorkflo
             Status = PickingTaskStatus.New
         };
 
+        var skippedOrders = new List<string>();
+
         foreach (var order in ordersToPick)
         {
             if (order.Status is not (OrderStatus.Reserved or OrderStatus.PartiallyReserved or OrderStatus.Confirmed))
             {
-                throw new InvalidOperationException($"Order {order.OrderNumber} is not in a pickable status.");
+                skippedOrders.Add(order.OrderNumber);
+                continue;
             }
 
             foreach (var orderLine in order.Lines.Where(orderLine => orderLine.ReservedQuantity - orderLine.PickedQuantity > 0))
@@ -226,7 +229,11 @@ public sealed class OrderWorkflowService(AppDbContext dbContext) : IOrderWorkflo
 
         if (pickingTask.Lines.Count == 0)
         {
-            throw new InvalidOperationException("No reservable lines found for picking task.");
+            var reason = skippedOrders.Count > 0
+                ? $" Selected non-pickable orders: {string.Join(", ", skippedOrders)}."
+                : string.Empty;
+
+            throw new InvalidOperationException($"No reservable lines found for picking task.{reason}");
         }
 
         dbContext.PickingTasks.Add(pickingTask);

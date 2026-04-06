@@ -189,6 +189,10 @@ public sealed class MainViewModel : INotifyPropertyChanged
             await RefreshOrdersAsync();
             await RefreshDashboardAsync();
         }
+        catch (InvalidOperationException ex)
+        {
+            StatusText = ex.Message;
+        }
         catch (HttpRequestException)
         {
             StatusText = "Unable to create picking task. API is unavailable.";
