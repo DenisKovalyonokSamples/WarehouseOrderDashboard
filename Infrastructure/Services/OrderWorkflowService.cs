@@ -320,18 +320,31 @@ public sealed class OrderWorkflowService(AppDbContext dbContext) : IOrderWorkflo
             stockOverviewQuery = stockOverviewQuery.Where(stock => stock.WarehouseId == warehouseId);
         }
 
-        return await stockOverviewQuery
+        var rows = await stockOverviewQuery
             .OrderBy(stock => stock.Item.Sku)
+            .Select(stock => new
+            {
+                stock.ItemId,
+                ItemSku = stock.Item.Sku,
+                ItemName = stock.Item.Name,
+                stock.WarehouseId,
+                WarehouseName = stock.Warehouse.Name,
+                stock.AvailableQuantity,
+                stock.ReservedQuantity
+            })
+            .ToListAsync(cancellationToken);
+
+        return rows
             .Select(stock => new StockOverviewDto(
                 stock.ItemId,
-                stock.Item.Sku,
-                stock.Item.Name,
+                stock.ItemSku,
+                stock.ItemName,
                 stock.WarehouseId,
-                stock.Warehouse.Name,
+                stock.WarehouseName,
                 stock.AvailableQuantity,
                 stock.ReservedQuantity,
                 stock.AvailableQuantity - stock.ReservedQuantity < 0))
-            .ToListAsync(cancellationToken);
+            .ToList();
     }
 
     /// <inheritdoc />
