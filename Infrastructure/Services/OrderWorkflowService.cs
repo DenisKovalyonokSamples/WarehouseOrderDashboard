@@ -314,8 +314,11 @@ public sealed class OrderWorkflowService(AppDbContext dbContext) : IOrderWorkflo
     }
 
     /// <inheritdoc />
-    public async Task<IReadOnlyCollection<PickingTaskListItemDto>> GetPickingTasksAsync(bool activeOnly, CancellationToken cancellationToken)
+    public async Task<PagedResult<PickingTaskListItemDto>> GetPickingTasksAsync(bool activeOnly, int page, int pageSize, CancellationToken cancellationToken)
     {
+        var currentPage = Math.Max(page, 1);
+        var currentPageSize = Math.Clamp(pageSize, 1, 200);
+
         var pickingTasksQuery = dbContext.PickingTasks
             .AsNoTracking()
             .AsQueryable();
@@ -327,8 +330,12 @@ public sealed class OrderWorkflowService(AppDbContext dbContext) : IOrderWorkflo
                 pickingTask.Status != PickingTaskStatus.Cancelled);
         }
 
-        return await pickingTasksQuery
+        var totalCount = await pickingTasksQuery.CountAsync(cancellationToken);
+
+        var items = await pickingTasksQuery
             .OrderByDescending(pickingTask => pickingTask.CreatedAt)
+            .Skip((currentPage - 1) * currentPageSize)
+            .Take(currentPageSize)
             .Select(pickingTask => new PickingTaskListItemDto(
                 pickingTask.Id,
                 pickingTask.TaskNumber,
@@ -338,11 +345,16 @@ public sealed class OrderWorkflowService(AppDbContext dbContext) : IOrderWorkflo
                 pickingTask.Lines.Sum(pickingTaskLine => (decimal?)pickingTaskLine.Quantity) ?? 0,
                 pickingTask.Lines.Sum(pickingTaskLine => (decimal?)pickingTaskLine.PickedQuantity) ?? 0))
             .ToListAsync(cancellationToken);
+
+        return new PagedResult<PickingTaskListItemDto>(items, currentPage, currentPageSize, totalCount);
     }
 
     /// <inheritdoc />
-    public async Task<IReadOnlyCollection<StockOverviewDto>> GetStockOverviewAsync(int? warehouseId, CancellationToken cancellationToken)
+    public async Task<PagedResult<StockOverviewDto>> GetStockOverviewAsync(int? warehouseId, int page, int pageSize, CancellationToken cancellationToken)
     {
+        var currentPage = Math.Max(page, 1);
+        var currentPageSize = Math.Clamp(pageSize, 1, 200);
+
         var stockOverviewQuery = dbContext.StockBalances
             .AsNoTracking()
             .Include(stock => stock.Item)
@@ -354,8 +366,13 @@ public sealed class OrderWorkflowService(AppDbContext dbContext) : IOrderWorkflo
             stockOverviewQuery = stockOverviewQuery.Where(stock => stock.WarehouseId == warehouseId);
         }
 
+        var totalCount = await stockOverviewQuery.CountAsync(cancellationToken);
+
         var rows = await stockOverviewQuery
             .OrderBy(stock => stock.Item.Sku)
+            .ThenBy(stock => stock.Warehouse.Name)
+            .Skip((currentPage - 1) * currentPageSize)
+            .Take(currentPageSize)
             .Select(stock => new
             {
                 stock.ItemId,
@@ -368,7 +385,7 @@ public sealed class OrderWorkflowService(AppDbContext dbContext) : IOrderWorkflo
             })
             .ToListAsync(cancellationToken);
 
-        return rows
+        var items = rows
             .Select(stock => new StockOverviewDto(
                 stock.ItemId,
                 stock.ItemSku,
@@ -379,6 +396,8 @@ public sealed class OrderWorkflowService(AppDbContext dbContext) : IOrderWorkflo
                 stock.ReservedQuantity,
                 stock.AvailableQuantity - stock.ReservedQuantity < 0))
             .ToList();
+
+        return new PagedResult<StockOverviewDto>(items, currentPage, currentPageSize, totalCount);
     }
 
     /// <inheritdoc />

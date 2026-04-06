@@ -13,9 +13,9 @@ public interface IWarehouseApiClient
     Task<PagedResult<OrderListItemDto>> GetOrdersAsync(string? search, int page, int pageSize, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Returns stock overview rows.
+    /// Returns paged stock overview rows.
     /// </summary>
-    Task<IReadOnlyCollection<StockOverviewDto>> GetStockAsync(CancellationToken cancellationToken);
+    Task<PagedResult<StockOverviewDto>> GetStockAsync(int page, int pageSize, CancellationToken cancellationToken);
 
     /// <summary>
     /// Returns dashboard data.
@@ -28,7 +28,7 @@ public interface IWarehouseApiClient
     Task<PickingTaskDto> CreatePickingTaskAsync(IReadOnlyCollection<int> orderIds, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Returns picking tasks for the UI.
+    /// Returns paged picking tasks for the UI.
     /// </summary>
-    Task<IReadOnlyCollection<PickingTaskListItemDto>> GetPickingTasksAsync(CancellationToken cancellationToken);
+    Task<PagedResult<PickingTaskListItemDto>> GetPickingTasksAsync(int page, int pageSize, CancellationToken cancellationToken);
 }

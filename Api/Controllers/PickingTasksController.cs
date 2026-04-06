@@ -15,9 +15,13 @@ public sealed class PickingTasksController(IOrderWorkflowService service) : Cont
     /// Returns picking task list data.
     /// </summary>
     [HttpGet]
-    public async Task<ActionResult<IReadOnlyCollection<PickingTaskListItemDto>>> List([FromQuery] bool activeOnly = true, CancellationToken cancellationToken = default)
+    public async Task<ActionResult<PagedResult<PickingTaskListItemDto>>> List(
+        [FromQuery] bool activeOnly = true,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 29,
+        CancellationToken cancellationToken = default)
     {
-        var result = await service.GetPickingTasksAsync(activeOnly, cancellationToken);
+        var result = await service.GetPickingTasksAsync(activeOnly, page, pageSize, cancellationToken);
         return Ok(result);
     }
 

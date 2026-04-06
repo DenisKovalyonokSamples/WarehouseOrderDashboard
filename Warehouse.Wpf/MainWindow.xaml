@@ -17,59 +17,83 @@
 
         <TabControl>
             <TabItem Header="Orders">
-                <DataGrid x:Name="OrdersGrid"
-                          ItemsSource="{Binding Orders}"
-                          AutoGenerateColumns="False"
-                          SelectionMode="Extended"
-                          SelectionChanged="OrdersGrid_OnSelectionChanged"
-                          EnableRowVirtualization="True"
-                          VirtualizingPanel.IsVirtualizing="True"
-                          VirtualizingPanel.VirtualizationMode="Recycling">
-                    <DataGrid.Columns>
-                        <DataGridTextColumn Header="Order #" Binding="{Binding OrderNumber}" Width="*" />
-                        <DataGridTextColumn Header="Customer" Binding="{Binding CustomerName}" Width="2*" />
-                        <DataGridTextColumn Header="Warehouse" Binding="{Binding WarehouseName}" Width="2*" />
-                        <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="*" />
-                        <DataGridTextColumn Header="Lines" Binding="{Binding LineCount}" Width="Auto" />
-                        <DataGridTextColumn Header="Created" Binding="{Binding CreatedAt}" Width="2*" />
-                    </DataGrid.Columns>
-                </DataGrid>
+                <DockPanel>
+                    <StackPanel Orientation="Horizontal" DockPanel.Dock="Bottom" HorizontalAlignment="Right" Margin="0,8,0,0">
+                        <Button Content="Previous" Command="{Binding PreviousOrdersPageCommand}" Margin="0,0,8,0" />
+                        <TextBlock Text="{Binding OrdersPageText}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                        <Button Content="Next" Command="{Binding NextOrdersPageCommand}" />
+                    </StackPanel>
+
+                    <DataGrid x:Name="OrdersGrid"
+                              ItemsSource="{Binding Orders}"
+                              AutoGenerateColumns="False"
+                              SelectionMode="Extended"
+                              SelectionChanged="OrdersGrid_OnSelectionChanged"
+                              EnableRowVirtualization="True"
+                              VirtualizingPanel.IsVirtualizing="True"
+                              VirtualizingPanel.VirtualizationMode="Recycling">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Order #" Binding="{Binding OrderNumber}" Width="*" />
+                            <DataGridTextColumn Header="Customer" Binding="{Binding CustomerName}" Width="2*" />
+                            <DataGridTextColumn Header="Warehouse" Binding="{Binding WarehouseName}" Width="2*" />
+                            <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="*" />
+                            <DataGridTextColumn Header="Lines" Binding="{Binding LineCount}" Width="Auto" />
+                            <DataGridTextColumn Header="Created" Binding="{Binding CreatedAt}" Width="2*" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </DockPanel>
             </TabItem>
 
             <TabItem Header="Stock">
-                <DataGrid ItemsSource="{Binding Stock}"
-                          AutoGenerateColumns="False"
-                          IsReadOnly="True"
-                          EnableRowVirtualization="True"
-                          VirtualizingPanel.IsVirtualizing="True"
-                          VirtualizingPanel.VirtualizationMode="Recycling">
-                    <DataGrid.Columns>
-                        <DataGridTextColumn Header="SKU" Binding="{Binding ItemSku}" Width="*" />
-                        <DataGridTextColumn Header="Item" Binding="{Binding ItemName}" Width="2*" />
-                        <DataGridTextColumn Header="Warehouse" Binding="{Binding WarehouseName}" Width="2*" />
-                        <DataGridTextColumn Header="Available" Binding="{Binding AvailableQuantity}" Width="*" />
-                        <DataGridTextColumn Header="Reserved" Binding="{Binding ReservedQuantity}" Width="*" />
-                        <DataGridCheckBoxColumn Header="Shortage" Binding="{Binding HasShortage}" Width="Auto" />
-                    </DataGrid.Columns>
-                </DataGrid>
+                <DockPanel>
+                    <StackPanel Orientation="Horizontal" DockPanel.Dock="Bottom" HorizontalAlignment="Right" Margin="0,8,0,0">
+                        <Button Content="Previous" Command="{Binding PreviousStockPageCommand}" Margin="0,0,8,0" />
+                        <TextBlock Text="{Binding StockPageText}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                        <Button Content="Next" Command="{Binding NextStockPageCommand}" />
+                    </StackPanel>
+
+                    <DataGrid ItemsSource="{Binding Stock}"
+                              AutoGenerateColumns="False"
+                              IsReadOnly="True"
+                              EnableRowVirtualization="True"
+                              VirtualizingPanel.IsVirtualizing="True"
+                              VirtualizingPanel.VirtualizationMode="Recycling">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="SKU" Binding="{Binding ItemSku}" Width="*" />
+                            <DataGridTextColumn Header="Item" Binding="{Binding ItemName}" Width="2*" />
+                            <DataGridTextColumn Header="Warehouse" Binding="{Binding WarehouseName}" Width="2*" />
+                            <DataGridTextColumn Header="Available" Binding="{Binding AvailableQuantity}" Width="*" />
+                            <DataGridTextColumn Header="Reserved" Binding="{Binding ReservedQuantity}" Width="*" />
+                            <DataGridCheckBoxColumn Header="Shortage" Binding="{Binding HasShortage}" Width="Auto" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </DockPanel>
             </TabItem>
 
             <TabItem Header="Picking Tasks">
-                <DataGrid ItemsSource="{Binding PickingTasks}"
-                          AutoGenerateColumns="False"
-                          IsReadOnly="True"
-                          EnableRowVirtualization="True"
-                          VirtualizingPanel.IsVirtualizing="True"
-                          VirtualizingPanel.VirtualizationMode="Recycling">
-                    <DataGrid.Columns>
-                        <DataGridTextColumn Header="Task #" Binding="{Binding TaskNumber}" Width="*" />
-                        <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="*" />
-                        <DataGridTextColumn Header="Lines" Binding="{Binding LineCount}" Width="Auto" />
-                        <DataGridTextColumn Header="Total Qty" Binding="{Binding TotalQuantity}" Width="*" />
-                        <DataGridTextColumn Header="Picked Qty" Binding="{Binding PickedQuantity}" Width="*" />
-                        <DataGridTextColumn Header="Created" Binding="{Binding CreatedAt}" Width="2*" />
-                    </DataGrid.Columns>
-                </DataGrid>
+                <DockPanel>
+                    <StackPanel Orientation="Horizontal" DockPanel.Dock="Bottom" HorizontalAlignment="Right" Margin="0,8,0,0">
+                        <Button Content="Previous" Command="{Binding PreviousPickingTasksPageCommand}" Margin="0,0,8,0" />
+                        <TextBlock Text="{Binding PickingTasksPageText}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                        <Button Content="Next" Command="{Binding NextPickingTasksPageCommand}" />
+                    </StackPanel>
+
+                    <DataGrid ItemsSource="{Binding PickingTasks}"
+                              AutoGenerateColumns="False"
+                              IsReadOnly="True"
+                              EnableRowVirtualization="True"
+                              VirtualizingPanel.IsVirtualizing="True"
+                              VirtualizingPanel.VirtualizationMode="Recycling">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Task #" Binding="{Binding TaskNumber}" Width="*" />
+                            <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="*" />
+                            <DataGridTextColumn Header="Lines" Binding="{Binding LineCount}" Width="Auto" />
+                            <DataGridTextColumn Header="Total Qty" Binding="{Binding TotalQuantity}" Width="*" />
+                            <DataGridTextColumn Header="Picked Qty" Binding="{Binding PickedQuantity}" Width="*" />
+                            <DataGridTextColumn Header="Created" Binding="{Binding CreatedAt}" Width="2*" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </DockPanel>
             </TabItem>
 
             <TabItem Header="Dashboard">

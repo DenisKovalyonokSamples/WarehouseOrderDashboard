@@ -26,10 +26,11 @@ public sealed class WarehouseApiClient(HttpClient httpClient) : IWarehouseApiCli
     }
 
     /// <inheritdoc />
-    public async Task<IReadOnlyCollection<StockOverviewDto>> GetStockAsync(CancellationToken cancellationToken)
+    public async Task<PagedResult<StockOverviewDto>> GetStockAsync(int page, int pageSize, CancellationToken cancellationToken)
     {
-        return await _httpClient.GetFromJsonAsync<IReadOnlyCollection<StockOverviewDto>>("api/stock", cancellationToken)
-            ?? Array.Empty<StockOverviewDto>();
+        var requestUri = $"api/stock?page={page}&pageSize={pageSize}";
+        return await _httpClient.GetFromJsonAsync<PagedResult<StockOverviewDto>>(requestUri, cancellationToken)
+            ?? new PagedResult<StockOverviewDto>();
     }
 
     /// <inheritdoc />
@@ -72,10 +73,11 @@ public sealed class WarehouseApiClient(HttpClient httpClient) : IWarehouseApiCli
     }
 
     /// <inheritdoc />
-    public async Task<IReadOnlyCollection<PickingTaskListItemDto>> GetPickingTasksAsync(CancellationToken cancellationToken)
+    public async Task<PagedResult<PickingTaskListItemDto>> GetPickingTasksAsync(int page, int pageSize, CancellationToken cancellationToken)
     {
-        return await _httpClient.GetFromJsonAsync<IReadOnlyCollection<PickingTaskListItemDto>>("api/picking-tasks?activeOnly=true", cancellationToken)
-            ?? Array.Empty<PickingTaskListItemDto>();
+        var requestUri = $"api/picking-tasks?activeOnly=true&page={page}&pageSize={pageSize}";
+        return await _httpClient.GetFromJsonAsync<PagedResult<PickingTaskListItemDto>>(requestUri, cancellationToken)
+            ?? new PagedResult<PickingTaskListItemDto>();
     }
 
     private sealed class ApiProblemDetails

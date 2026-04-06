@@ -68,7 +68,7 @@ public sealed class OrderQuery
     public int? WarehouseId { get; init; }
     public string? Search { get; init; }
     public int Page { get; init; } = 1;
-    public int PageSize { get; init; } = 25;
+    public int PageSize { get; init; } = 29;
 }
 
 /// <summary>

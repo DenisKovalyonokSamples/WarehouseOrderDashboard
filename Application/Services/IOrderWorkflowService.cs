@@ -45,12 +45,12 @@ public interface IOrderWorkflowService
     /// <summary>
     /// Returns picking tasks, optionally only active tasks.
     /// </summary>
-    Task<IReadOnlyCollection<PickingTaskListItemDto>> GetPickingTasksAsync(bool activeOnly, CancellationToken cancellationToken);
+    Task<PagedResult<PickingTaskListItemDto>> GetPickingTasksAsync(bool activeOnly, int page, int pageSize, CancellationToken cancellationToken);
 
     /// <summary>
     /// Returns stock overview, optionally filtered by warehouse.
     /// </summary>
-    Task<IReadOnlyCollection<StockOverviewDto>> GetStockOverviewAsync(int? warehouseId, CancellationToken cancellationToken);
+    Task<PagedResult<StockOverviewDto>> GetStockOverviewAsync(int? warehouseId, int page, int pageSize, CancellationToken cancellationToken);
 
     /// <summary>
     /// Returns dashboard metrics for the specified day.

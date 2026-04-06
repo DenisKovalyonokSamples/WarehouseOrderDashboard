@@ -34,7 +34,7 @@ public sealed class OrdersController(IOrderWorkflowService service) : Controller
         [FromQuery] int? warehouseId,
         [FromQuery] string? search,
         [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 25,
+        [FromQuery] int pageSize = 29,
         CancellationToken cancellationToken = default)
     {
         var query = new OrderQuery

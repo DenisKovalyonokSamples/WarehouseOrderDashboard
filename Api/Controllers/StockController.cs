@@ -15,9 +15,13 @@ public sealed class StockController(IOrderWorkflowService service) : ControllerB
     /// Returns stock overview, optionally filtered by warehouse.
     /// </summary>
     [HttpGet]
-    public async Task<ActionResult<IReadOnlyCollection<StockOverviewDto>>> Get([FromQuery] int? warehouseId, CancellationToken cancellationToken)
+    public async Task<ActionResult<PagedResult<StockOverviewDto>>> Get(
+        [FromQuery] int? warehouseId,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 29,
+        CancellationToken cancellationToken = default)
     {
-        var result = await service.GetStockOverviewAsync(warehouseId, cancellationToken);
+        var result = await service.GetStockOverviewAsync(warehouseId, page, pageSize, cancellationToken);
         return Ok(result);
     }
 }

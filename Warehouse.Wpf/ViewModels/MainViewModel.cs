@@ -14,8 +14,14 @@ namespace Warehouse.Wpf.ViewModels;
 /// </summary>
 public sealed class MainViewModel : INotifyPropertyChanged
 {
+    private const int PageSize = 29;
     private readonly IWarehouseApiClient _apiClient;
-    private int _page = 1;
+    private int _ordersPage = 1;
+    private int _stockPage = 1;
+    private int _pickingTasksPage = 1;
+    private int _ordersTotalCount;
+    private int _stockTotalCount;
+    private int _pickingTasksTotalCount;
     private string? _searchText;
     private string _statusText = "Ready";
     private DashboardDto _dashboard = new();
@@ -27,8 +33,14 @@ public sealed class MainViewModel : INotifyPropertyChanged
     {
         _apiClient = apiClient;
         RefreshOrdersCommand = new AsyncRelayCommand(RefreshOrdersAsync);
+        PreviousOrdersPageCommand = new AsyncRelayCommand(PreviousOrdersPageAsync, CanGoToPreviousOrdersPage);
+        NextOrdersPageCommand = new AsyncRelayCommand(NextOrdersPageAsync, CanGoToNextOrdersPage);
         RefreshStockCommand = new AsyncRelayCommand(RefreshStockAsync);
+        PreviousStockPageCommand = new AsyncRelayCommand(PreviousStockPageAsync, CanGoToPreviousStockPage);
+        NextStockPageCommand = new AsyncRelayCommand(NextStockPageAsync, CanGoToNextStockPage);
         RefreshPickingTasksCommand = new AsyncRelayCommand(RefreshPickingTasksAsync);
+        PreviousPickingTasksPageCommand = new AsyncRelayCommand(PreviousPickingTasksPageAsync, CanGoToPreviousPickingTasksPage);
+        NextPickingTasksPageCommand = new AsyncRelayCommand(NextPickingTasksPageAsync, CanGoToNextPickingTasksPage);
         RefreshDashboardCommand = new AsyncRelayCommand(RefreshDashboardAsync);
         CreatePickingTaskCommand = new AsyncRelayCommand(CreatePickingTaskAsync, () => SelectedOrderIds.Count > 0);
     }
@@ -44,10 +56,20 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public ObservableCollection<int> SelectedOrderIds { get; } = [];
 
     public ICommand RefreshOrdersCommand { get; }
+    public ICommand PreviousOrdersPageCommand { get; }
+    public ICommand NextOrdersPageCommand { get; }
     public ICommand RefreshStockCommand { get; }
+    public ICommand PreviousStockPageCommand { get; }
+    public ICommand NextStockPageCommand { get; }
     public ICommand RefreshPickingTasksCommand { get; }
+    public ICommand PreviousPickingTasksPageCommand { get; }
+    public ICommand NextPickingTasksPageCommand { get; }
     public ICommand RefreshDashboardCommand { get; }
     public ICommand CreatePickingTaskCommand { get; }
+
+    public string OrdersPageText => BuildPageText(_ordersPage, _ordersTotalCount);
+    public string StockPageText => BuildPageText(_stockPage, _stockTotalCount);
+    public string PickingTasksPageText => BuildPageText(_pickingTasksPage, _pickingTasksTotalCount);
 
     public string? SearchText
     {
@@ -60,6 +82,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
             }
 
             _searchText = value;
+            _ordersPage = 1;
             OnPropertyChanged();
         }
     }
@@ -115,14 +138,17 @@ public sealed class MainViewModel : INotifyPropertyChanged
     {
         try
         {
-            var tasks = await _apiClient.GetPickingTasksAsync(CancellationToken.None);
+            var tasksPage = await _apiClient.GetPickingTasksAsync(_pickingTasksPage, PageSize, CancellationToken.None);
+            _pickingTasksTotalCount = tasksPage.TotalCount;
             PickingTasks.Clear();
-            foreach (var task in tasks)
+            foreach (var task in tasksPage.Items)
             {
                 PickingTasks.Add(task);
             }
 
-            StatusText = $"Loaded {PickingTasks.Count} picking tasks.";
+            OnPropertyChanged(nameof(PickingTasksPageText));
+            UpdatePagingCommands();
+            StatusText = $"Loaded {PickingTasks.Count} picking tasks (page {_pickingTasksPage}).";
         }
         catch (HttpRequestException)
         {
@@ -151,14 +177,17 @@ public sealed class MainViewModel : INotifyPropertyChanged
     {
         try
         {
-            var ordersPage = await _apiClient.GetOrdersAsync(SearchText, _page, 100, CancellationToken.None);
+            var ordersPage = await _apiClient.GetOrdersAsync(SearchText, _ordersPage, PageSize, CancellationToken.None);
+            _ordersTotalCount = ordersPage.TotalCount;
             Orders.Clear();
             foreach (var order in ordersPage.Items)
             {
                 Orders.Add(order);
             }
 
-            StatusText = $"Loaded {Orders.Count} orders.";
+            OnPropertyChanged(nameof(OrdersPageText));
+            UpdatePagingCommands();
+            StatusText = $"Loaded {Orders.Count} orders (page {_ordersPage}).";
         }
         catch (HttpRequestException)
         {
@@ -170,14 +199,17 @@ public sealed class MainViewModel : INotifyPropertyChanged
     {
         try
         {
-            var stockRows = await _apiClient.GetStockAsync(CancellationToken.None);
+            var stockPage = await _apiClient.GetStockAsync(_stockPage, PageSize, CancellationToken.None);
+            _stockTotalCount = stockPage.TotalCount;
             Stock.Clear();
-            foreach (var row in stockRows)
+            foreach (var row in stockPage.Items)
             {
                 Stock.Add(row);
             }
 
-            StatusText = $"Loaded {Stock.Count} stock rows.";
+            OnPropertyChanged(nameof(StockPageText));
+            UpdatePagingCommands();
+            StatusText = $"Loaded {Stock.Count} stock rows (page {_stockPage}).";
         }
         catch (HttpRequestException)
         {
@@ -196,6 +228,95 @@ public sealed class MainViewModel : INotifyPropertyChanged
         {
             StatusText = "Unable to load dashboard. API is unavailable.";
         }
+    }
+
+    private async Task PreviousOrdersPageAsync()
+    {
+        if (_ordersPage <= 1)
+        {
+            return;
+        }
+
+        _ordersPage--;
+        await RefreshOrdersAsync();
+    }
+
+    private async Task NextOrdersPageAsync()
+    {
+        if (!CanGoToNextOrdersPage())
+        {
+            return;
+        }
+
+        _ordersPage++;
+        await RefreshOrdersAsync();
+    }
+
+    private async Task PreviousStockPageAsync()
+    {
+        if (_stockPage <= 1)
+        {
+            return;
+        }
+
+        _stockPage--;
+        await RefreshStockAsync();
+    }
+
+    private async Task NextStockPageAsync()
+    {
+        if (!CanGoToNextStockPage())
+        {
+            return;
+        }
+
+        _stockPage++;
+        await RefreshStockAsync();
+    }
+
+    private async Task PreviousPickingTasksPageAsync()
+    {
+        if (_pickingTasksPage <= 1)
+        {
+            return;
+        }
+
+        _pickingTasksPage--;
+        await RefreshPickingTasksAsync();
+    }
+
+    private async Task NextPickingTasksPageAsync()
+    {
+        if (!CanGoToNextPickingTasksPage())
+        {
+            return;
+        }
+
+        _pickingTasksPage++;
+        await RefreshPickingTasksAsync();
+    }
+
+    private bool CanGoToPreviousOrdersPage() => _ordersPage > 1;
+    private bool CanGoToNextOrdersPage() => _ordersPage * PageSize < _ordersTotalCount;
+    private bool CanGoToPreviousStockPage() => _stockPage > 1;
+    private bool CanGoToNextStockPage() => _stockPage * PageSize < _stockTotalCount;
+    private bool CanGoToPreviousPickingTasksPage() => _pickingTasksPage > 1;
+    private bool CanGoToNextPickingTasksPage() => _pickingTasksPage * PageSize < _pickingTasksTotalCount;
+
+    private void UpdatePagingCommands()
+    {
+        (PreviousOrdersPageCommand as AsyncRelayCommand)?.RaiseCanExecuteChanged();
+        (NextOrdersPageCommand as AsyncRelayCommand)?.RaiseCanExecuteChanged();
+        (PreviousStockPageCommand as AsyncRelayCommand)?.RaiseCanExecuteChanged();
+        (NextStockPageCommand as AsyncRelayCommand)?.RaiseCanExecuteChanged();
+        (PreviousPickingTasksPageCommand as AsyncRelayCommand)?.RaiseCanExecuteChanged();
+        (NextPickingTasksPageCommand as AsyncRelayCommand)?.RaiseCanExecuteChanged();
+    }
+
+    private static string BuildPageText(int page, int totalCount)
+    {
+        var totalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)PageSize));
+        return $"Page {page} of {totalPages}";
     }
 
     private async Task CreatePickingTaskAsync()
