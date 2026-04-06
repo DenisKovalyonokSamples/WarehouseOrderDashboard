@@ -2,14 +2,23 @@ using Warehouse.Domain;
 
 namespace Warehouse.Application.Contracts;
 
+/// <summary>
+/// Represents a line request used to create an order.
+/// </summary>
 public sealed record OrderLineCreateDto(int ItemId, decimal Quantity);
 
+/// <summary>
+/// Represents request data to create a warehouse order.
+/// </summary>
 public sealed record CreateOrderRequest(
     string OrderNumber,
     int CustomerId,
     int WarehouseId,
     IReadOnlyCollection<OrderLineCreateDto> Lines);
 
+/// <summary>
+/// Represents line details in order responses.
+/// </summary>
 public sealed record OrderLineDto(
     int Id,
     int ItemId,
@@ -18,6 +27,9 @@ public sealed record OrderLineDto(
     decimal ReservedQuantity,
     decimal PickedQuantity);
 
+/// <summary>
+/// Represents a summarized order row for list views.
+/// </summary>
 public sealed record OrderListItemDto(
     int Id,
     string OrderNumber,
@@ -29,6 +41,9 @@ public sealed record OrderListItemDto(
     DateTime CreatedAt,
     int LineCount);
 
+/// <summary>
+/// Represents full order details.
+/// </summary>
 public sealed record OrderDetailsDto(
     int Id,
     string OrderNumber,
@@ -41,6 +56,9 @@ public sealed record OrderDetailsDto(
     long Version,
     IReadOnlyCollection<OrderLineDto> Lines);
 
+/// <summary>
+/// Represents filters and paging options for order queries.
+/// </summary>
 public sealed class OrderQuery
 {
     public DateTime? CreatedFromUtc { get; init; }
@@ -53,4 +71,7 @@ public sealed class OrderQuery
     public int PageSize { get; init; } = 25;
 }
 
+/// <summary>
+/// Represents a request to change order status with expected version.
+/// </summary>
 public sealed record ChangeOrderStatusRequest(OrderStatus TargetStatus, long ExpectedVersion);

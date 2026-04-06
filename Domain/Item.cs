@@ -1,5 +1,8 @@
 namespace Warehouse.Domain;
 
+/// <summary>
+/// Represents a catalog item that can be ordered and stocked.
+/// </summary>
 public sealed class Item : BaseEntity
 {
     public string Sku { get; set; } = string.Empty;

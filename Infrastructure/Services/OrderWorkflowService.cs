@@ -7,8 +7,12 @@ using Warehouse.Domain;
 
 namespace Warehouse.Infrastructure.Services;
 
+/// <summary>
+/// Implements warehouse order workflow operations over <see cref="AppDbContext"/>.
+/// </summary>
 public sealed class OrderWorkflowService(AppDbContext dbContext) : IOrderWorkflowService
 {
+    /// <inheritdoc />
     public async Task<OrderDetailsDto> CreateOrderAsync(CreateOrderRequest request, CancellationToken cancellationToken)
     {
         if (request.Lines.Count == 0)
@@ -41,6 +45,7 @@ public sealed class OrderWorkflowService(AppDbContext dbContext) : IOrderWorkflo
         return await GetOrderInternalAsync(order.Id, cancellationToken);
     }
 
+    /// <inheritdoc />
     public async Task<PagedResult<OrderListItemDto>> GetOrdersAsync(OrderQuery query, CancellationToken cancellationToken)
     {
         var page = Math.Max(query.Page, 1);
@@ -105,6 +110,7 @@ public sealed class OrderWorkflowService(AppDbContext dbContext) : IOrderWorkflo
         return new PagedResult<OrderListItemDto>(items, page, pageSize, totalCount);
     }
 
+    /// <inheritdoc />
     public async Task<OrderDetailsDto?> GetOrderByIdAsync(int orderId, CancellationToken cancellationToken)
     {
         return await dbContext.WarehouseOrders
@@ -114,6 +120,7 @@ public sealed class OrderWorkflowService(AppDbContext dbContext) : IOrderWorkflo
             .FirstOrDefaultAsync(cancellationToken);
     }
 
+    /// <inheritdoc />
     public async Task<OrderDetailsDto> ChangeStatusAsync(int orderId, ChangeOrderStatusRequest request, CancellationToken cancellationToken)
     {
         var transaction = await BeginTransactionIfRelationalAsync(cancellationToken);
@@ -164,12 +171,14 @@ public sealed class OrderWorkflowService(AppDbContext dbContext) : IOrderWorkflo
         return await GetOrderInternalAsync(orderId, cancellationToken);
     }
 
+    /// <inheritdoc />
     public async Task CancelOrderAsync(int orderId, long expectedVersion, CancellationToken cancellationToken)
     {
         var result = await ChangeStatusAsync(orderId, new ChangeOrderStatusRequest(OrderStatus.Cancelled, expectedVersion), cancellationToken);
         _ = result;
     }
 
+    /// <inheritdoc />
     public async Task<PickingTaskDto> CreatePickingTaskAsync(CreatePickingTaskRequest request, CancellationToken cancellationToken)
     {
         if (request.OrderIds.Count == 0)
@@ -238,6 +247,7 @@ public sealed class OrderWorkflowService(AppDbContext dbContext) : IOrderWorkflo
         return await GetPickingTaskInternalAsync(pickingTask.Id, cancellationToken);
     }
 
+    /// <inheritdoc />
     public async Task<PickingTaskDto> CompletePickingLineAsync(int pickingTaskLineId, CompletePickingLineRequest request, CancellationToken cancellationToken)
     {
         var transaction = await BeginTransactionIfRelationalAsync(cancellationToken);
@@ -296,6 +306,7 @@ public sealed class OrderWorkflowService(AppDbContext dbContext) : IOrderWorkflo
         return await GetPickingTaskInternalAsync(pickingTaskLine.PickingTaskId, cancellationToken);
     }
 
+    /// <inheritdoc />
     public async Task<IReadOnlyCollection<StockOverviewDto>> GetStockOverviewAsync(int? warehouseId, CancellationToken cancellationToken)
     {
         var stockOverviewQuery = dbContext.StockBalances
@@ -323,6 +334,7 @@ public sealed class OrderWorkflowService(AppDbContext dbContext) : IOrderWorkflo
             .ToListAsync(cancellationToken);
     }
 
+    /// <inheritdoc />
     public async Task<DashboardDto> GetDashboardAsync(DateOnly day, CancellationToken cancellationToken)
     {
         var dayStartUtc = day.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);

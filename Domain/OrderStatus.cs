@@ -1,5 +1,8 @@
 namespace Warehouse.Domain;
 
+/// <summary>
+/// Defines lifecycle states for a warehouse order.
+/// </summary>
 public enum OrderStatus
 {
     New = 0,

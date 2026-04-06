@@ -6,8 +6,14 @@ namespace Warehouse.Api.Controllers;
 
 [ApiController]
 [Route("api/picking-tasks")]
+/// <summary>
+/// Provides endpoints for creating and progressing picking tasks.
+/// </summary>
 public sealed class PickingTasksController(IOrderWorkflowService service) : ControllerBase
 {
+    /// <summary>
+    /// Creates a new picking task from selected orders.
+    /// </summary>
     [HttpPost]
     public async Task<ActionResult<PickingTaskDto>> Create([FromBody] CreatePickingTaskRequest request, CancellationToken cancellationToken)
     {
@@ -15,6 +21,9 @@ public sealed class PickingTasksController(IOrderWorkflowService service) : Cont
         return Ok(result);
     }
 
+    /// <summary>
+    /// Completes picked quantity on a picking task line.
+    /// </summary>
     [HttpPatch("lines/{lineId:int}/complete")]
     public async Task<ActionResult<PickingTaskDto>> CompleteLine(int lineId, [FromBody] CompletePickingLineRequest request, CancellationToken cancellationToken)
     {

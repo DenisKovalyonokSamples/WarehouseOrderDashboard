@@ -1,5 +1,8 @@
 namespace Warehouse.Domain;
 
+/// <summary>
+/// Defines lifecycle states for a picking task.
+/// </summary>
 public enum PickingTaskStatus
 {
     New = 0,

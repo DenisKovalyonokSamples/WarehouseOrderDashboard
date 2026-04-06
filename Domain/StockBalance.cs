@@ -1,5 +1,8 @@
 namespace Warehouse.Domain;
 
+/// <summary>
+/// Represents current item stock and reserved quantity for a warehouse.
+/// </summary>
 public sealed class StockBalance : BaseEntity
 {
     public int ItemId { get; set; }

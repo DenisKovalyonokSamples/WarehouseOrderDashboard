@@ -1,5 +1,8 @@
 namespace Warehouse.Domain;
 
+/// <summary>
+/// Represents a customer order in a warehouse.
+/// </summary>
 public sealed class WarehouseOrder : BaseEntity
 {
     public string OrderNumber { get; set; } = string.Empty;

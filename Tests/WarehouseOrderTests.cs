@@ -7,8 +7,14 @@ using Xunit;
 
 namespace Warehouse.Tests;
 
+/// <summary>
+/// Integration-style workflow tests for order, stock reservation, and picking flows.
+/// </summary>
 public class WarehouseOrderTests
 {
+    /// <summary>
+    /// Verifies confirming an order reserves stock and sets reserved status.
+    /// </summary>
     [Fact]
     public async Task ConfirmOrder_ReservesStock_AndSetsReservedStatus()
     {
@@ -31,6 +37,9 @@ public class WarehouseOrderTests
         Assert.Equal(5, updatedOrder.Lines.First().ReservedQuantity);
     }
 
+    /// <summary>
+    /// Verifies shipped orders cannot be cancelled.
+    /// </summary>
     [Fact]
     public async Task CancelShippedOrder_Throws()
     {
@@ -51,6 +60,9 @@ public class WarehouseOrderTests
             orderWorkflowService.CancelOrderAsync(shippedOrder.Id, shippedOrder.Version, CancellationToken.None));
     }
 
+    /// <summary>
+    /// Verifies picking completion updates task status and picked quantity.
+    /// </summary>
     [Fact]
     public async Task CreatePickingTask_AndCompleteLine_UpdatesTaskProgress()
     {
@@ -72,6 +84,9 @@ public class WarehouseOrderTests
         Assert.Equal(3, completedPickingTask.Lines.Single().PickedQuantity);
     }
 
+    /// <summary>
+    /// Creates an isolated in-memory database context for tests.
+    /// </summary>
     private static AppDbContext CreateDbContext()
     {
         var options = new DbContextOptionsBuilder<AppDbContext>()
@@ -81,6 +96,9 @@ public class WarehouseOrderTests
         return new AppDbContext(options);
     }
 
+    /// <summary>
+    /// Seeds required reference entities for workflow tests.
+    /// </summary>
     private static async Task SeedReferenceDataAsync(AppDbContext dbContext)
     {
         dbContext.Customers.Add(new Customer { Id = 1, Code = "C-001", Name = "Contoso" });

@@ -1,5 +1,8 @@
 namespace Warehouse.Domain;
 
+/// <summary>
+/// Represents a physical warehouse location.
+/// </summary>
 public sealed class WarehouseLocation : BaseEntity
 {
     public string Code { get; set; } = string.Empty;

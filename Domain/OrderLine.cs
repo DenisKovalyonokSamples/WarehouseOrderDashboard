@@ -1,5 +1,8 @@
 namespace Warehouse.Domain;
 
+/// <summary>
+/// Represents a single line item in an order.
+/// </summary>
 public sealed class OrderLine : BaseEntity
 {
     public int OrderId { get; set; }

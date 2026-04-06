@@ -9,11 +9,17 @@ using Warehouse.Wpf.ViewModels;
 
 namespace Warehouse.Wpf
 {
+    /// <summary>
+    /// Main application window.
+    /// </summary>
     public partial class MainWindow : Window
     {
         private static readonly Uri DefaultApiBaseAddress = new("https://localhost:58291/");
         private readonly MainViewModel _viewModel;
 
+        /// <summary>
+        /// Initializes the main window and data context.
+        /// </summary>
         public MainWindow()
         {
             InitializeComponent();
@@ -29,6 +35,9 @@ namespace Warehouse.Wpf
             Loaded += async (_, _) => await _viewModel.LoadAsync();
         }
 
+        /// <summary>
+        /// Resolves API base address from environment, local appsettings, or default value.
+        /// </summary>
         private static Uri ResolveApiBaseAddress()
         {
             const string apiBaseAddressEnvironmentVariableName = "WAREHOUSE_API_BASE_URL";
@@ -55,6 +64,9 @@ namespace Warehouse.Wpf
             return DefaultApiBaseAddress;
         }
 
+        /// <summary>
+        /// Ensures URI text ends with a trailing slash.
+        /// </summary>
         private static Uri EnsureTrailingSlash(Uri uri)
         {
             var uriText = uri.ToString();

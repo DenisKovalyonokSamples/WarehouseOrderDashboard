@@ -3,20 +3,69 @@ using Warehouse.Domain;
 
 namespace Warehouse.Infrastructure;
 
+/// <summary>
+/// Entity Framework database context for warehouse domain entities.
+/// </summary>
 public sealed class AppDbContext : DbContext
 {
+    /// <summary>
+    /// Initializes a new context instance.
+    /// </summary>
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
+
+    /// <summary>
+    /// Gets customers table.
+    /// </summary>
     public DbSet<Customer> Customers => Set<Customer>();
+
+    /// <summary>
+    /// Gets warehouse locations table.
+    /// </summary>
     public DbSet<WarehouseLocation> Warehouses => Set<WarehouseLocation>();
+
+    /// <summary>
+    /// Gets catalog items table.
+    /// </summary>
     public DbSet<Item> Items => Set<Item>();
+
+    /// <summary>
+    /// Gets stock balances table.
+    /// </summary>
     public DbSet<StockBalance> StockBalances => Set<StockBalance>();
+
+    /// <summary>
+    /// Gets orders table.
+    /// </summary>
     public DbSet<WarehouseOrder> WarehouseOrders => Set<WarehouseOrder>();
+
+    /// <summary>
+    /// Gets order lines table.
+    /// </summary>
     public DbSet<OrderLine> OrderLines => Set<OrderLine>();
+
+    /// <summary>
+    /// Gets stock reservations table.
+    /// </summary>
     public DbSet<StockReservation> StockReservations => Set<StockReservation>();
+
+    /// <summary>
+    /// Gets picking tasks table.
+    /// </summary>
     public DbSet<PickingTask> PickingTasks => Set<PickingTask>();
+
+    /// <summary>
+    /// Gets picking task lines table.
+    /// </summary>
     public DbSet<PickingTaskLine> PickingTaskLines => Set<PickingTaskLine>();
+
+    /// <summary>
+    /// Gets audit logs table.
+    /// </summary>
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
+    /// <summary>
+    /// Saves changes and updates audit/concurrency fields on modified entities.
+    /// </summary>
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         var utcNow = DateTime.UtcNow;
@@ -33,6 +82,9 @@ public sealed class AppDbContext : DbContext
         return base.SaveChangesAsync(cancellationToken);
     }
 
+    /// <summary>
+    /// Configures model mapping, constraints, and indexes.
+    /// </summary>
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Customer>(e =>

@@ -9,6 +9,9 @@ using Warehouse.Wpf.Services;
 
 namespace Warehouse.Wpf.ViewModels;
 
+/// <summary>
+/// Main screen view model for orders, stock, and dashboard operations.
+/// </summary>
 public sealed class MainViewModel : INotifyPropertyChanged
 {
     private readonly IWarehouseApiClient _apiClient;
@@ -17,6 +20,9 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private string _statusText = "Ready";
     private DashboardDto _dashboard = new();
 
+    /// <summary>
+    /// Initializes a new view model instance.
+    /// </summary>
     public MainViewModel(IWarehouseApiClient apiClient)
     {
         _apiClient = apiClient;
@@ -26,6 +32,9 @@ public sealed class MainViewModel : INotifyPropertyChanged
         CreatePickingTaskCommand = new AsyncRelayCommand(CreatePickingTaskAsync, () => SelectedOrderIds.Count > 0);
     }
 
+    /// <summary>
+    /// Raised when a bindable property changes.
+    /// </summary>
     public event PropertyChangedEventHandler? PropertyChanged;
 
     public ObservableCollection<OrderListItemDto> Orders { get; } = [];
@@ -81,6 +90,9 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public string DashboardSummary =>
         $"Orders Today: {Dashboard.TodayOrderCount} | Overdue Tasks: {Dashboard.OverdueTasks} | Unfulfilled Orders: {Dashboard.UnfulfilledOrders} | Avg min to picking start: {Dashboard.AvgMinutesFromCreateToPickingStart:F1}";
 
+    /// <summary>
+    /// Loads initial page data.
+    /// </summary>
     public async Task LoadAsync()
     {
         try
@@ -95,6 +107,9 @@ public sealed class MainViewModel : INotifyPropertyChanged
         }
     }
 
+    /// <summary>
+    /// Updates selected order identifiers from UI selection.
+    /// </summary>
     public void UpdateSelectedOrders(IEnumerable<int> orderIds)
     {
         SelectedOrderIds.Clear();

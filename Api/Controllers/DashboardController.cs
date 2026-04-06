@@ -6,8 +6,14 @@ namespace Warehouse.Api.Controllers;
 
 [ApiController]
 [Route("api/dashboard")]
+/// <summary>
+/// Provides dashboard metric endpoints.
+/// </summary>
 public sealed class DashboardController(IOrderWorkflowService service) : ControllerBase
 {
+    /// <summary>
+    /// Returns current-day dashboard summary.
+    /// </summary>
     [HttpGet("today")]
     public async Task<ActionResult<DashboardDto>> Today(CancellationToken cancellationToken)
     {

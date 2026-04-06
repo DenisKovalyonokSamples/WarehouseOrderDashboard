@@ -1,5 +1,8 @@
 namespace Warehouse.Wpf.Models;
 
+/// <summary>
+/// Represents a generic paged API result.
+/// </summary>
 public sealed class PagedResult<T>
 {
     public IReadOnlyCollection<T> Items { get; set; } = Array.Empty<T>();
@@ -8,6 +11,9 @@ public sealed class PagedResult<T>
     public int TotalCount { get; set; }
 }
 
+/// <summary>
+/// Represents a row in the orders list.
+/// </summary>
 public sealed class OrderListItemDto
 {
     public int Id { get; set; }
@@ -19,6 +25,9 @@ public sealed class OrderListItemDto
     public int LineCount { get; set; }
 }
 
+/// <summary>
+/// Represents stock overview data for the UI.
+/// </summary>
 public sealed class StockOverviewDto
 {
     public int ItemId { get; set; }
@@ -30,6 +39,9 @@ public sealed class StockOverviewDto
     public bool HasShortage { get; set; }
 }
 
+/// <summary>
+/// Represents a line in a picking task.
+/// </summary>
 public sealed class PickingTaskLineDto
 {
     public int Id { get; set; }
@@ -40,6 +52,9 @@ public sealed class PickingTaskLineDto
     public decimal PickedQuantity { get; set; }
 }
 
+/// <summary>
+/// Represents a picking task in the UI model.
+/// </summary>
 public sealed class PickingTaskDto
 {
     public int Id { get; set; }
@@ -49,6 +64,9 @@ public sealed class PickingTaskDto
     public IReadOnlyCollection<PickingTaskLineDto> Lines { get; set; } = Array.Empty<PickingTaskLineDto>();
 }
 
+/// <summary>
+/// Represents dashboard summary values.
+/// </summary>
 public sealed class DashboardDto
 {
     public int TodayOrderCount { get; set; }
