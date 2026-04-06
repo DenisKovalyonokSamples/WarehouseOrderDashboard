@@ -10,13 +10,13 @@ public sealed class WarehouseApiClient(HttpClient httpClient) : IWarehouseApiCli
 
     public async Task<PagedResult<OrderListItemDto>> GetOrdersAsync(string? search, int page, int pageSize, CancellationToken cancellationToken)
     {
-        var query = $"api/orders?page={page}&pageSize={pageSize}";
+        var requestUri = $"api/orders?page={page}&pageSize={pageSize}";
         if (!string.IsNullOrWhiteSpace(search))
         {
-            query += $"&search={Uri.EscapeDataString(search)}";
+            requestUri += $"&search={Uri.EscapeDataString(search)}";
         }
 
-        return await _httpClient.GetFromJsonAsync<PagedResult<OrderListItemDto>>(query, cancellationToken)
+        return await _httpClient.GetFromJsonAsync<PagedResult<OrderListItemDto>>(requestUri, cancellationToken)
             ?? new PagedResult<OrderListItemDto>();
     }
 
@@ -34,10 +34,10 @@ public sealed class WarehouseApiClient(HttpClient httpClient) : IWarehouseApiCli
 
     public async Task<PickingTaskDto> CreatePickingTaskAsync(IReadOnlyCollection<int> orderIds, CancellationToken cancellationToken)
     {
-        var response = await _httpClient.PostAsJsonAsync("api/picking-tasks", new { orderIds }, cancellationToken);
-        response.EnsureSuccessStatusCode();
+        var httpResponse = await _httpClient.PostAsJsonAsync("api/picking-tasks", new { orderIds }, cancellationToken);
+        httpResponse.EnsureSuccessStatusCode();
 
-        return await response.Content.ReadFromJsonAsync<PickingTaskDto>(cancellationToken: cancellationToken)
+        return await httpResponse.Content.ReadFromJsonAsync<PickingTaskDto>(cancellationToken: cancellationToken)
             ?? new PickingTaskDto();
     }
 }

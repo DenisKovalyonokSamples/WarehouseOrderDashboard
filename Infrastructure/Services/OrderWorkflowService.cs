@@ -48,58 +48,58 @@ public sealed class OrderWorkflowService(AppDbContext dbContext) : IOrderWorkflo
 
         var ordersQuery = dbContext.WarehouseOrders
             .AsNoTracking()
-            .Include(x => x.Customer)
-            .Include(x => x.Warehouse)
-            .Include(x => x.Lines)
+            .Include(order => order.Customer)
+            .Include(order => order.Warehouse)
+            .Include(order => order.Lines)
             .AsQueryable();
 
         if (query.CreatedFromUtc.HasValue)
         {
-            ordersQuery = ordersQuery.Where(x => x.CreatedAt >= query.CreatedFromUtc.Value);
+            ordersQuery = ordersQuery.Where(order => order.CreatedAt >= query.CreatedFromUtc.Value);
         }
 
         if (query.CreatedToUtc.HasValue)
         {
-            ordersQuery = ordersQuery.Where(x => x.CreatedAt <= query.CreatedToUtc.Value);
+            ordersQuery = ordersQuery.Where(order => order.CreatedAt <= query.CreatedToUtc.Value);
         }
 
         if (query.Status.HasValue)
         {
-            ordersQuery = ordersQuery.Where(x => x.Status == query.Status.Value);
+            ordersQuery = ordersQuery.Where(order => order.Status == query.Status.Value);
         }
 
         if (query.CustomerId.HasValue)
         {
-            ordersQuery = ordersQuery.Where(x => x.CustomerId == query.CustomerId.Value);
+            ordersQuery = ordersQuery.Where(order => order.CustomerId == query.CustomerId.Value);
         }
 
         if (query.WarehouseId.HasValue)
         {
-            ordersQuery = ordersQuery.Where(x => x.WarehouseId == query.WarehouseId.Value);
+            ordersQuery = ordersQuery.Where(order => order.WarehouseId == query.WarehouseId.Value);
         }
 
         if (!string.IsNullOrWhiteSpace(query.Search))
         {
             var search = query.Search.Trim();
-            ordersQuery = ordersQuery.Where(x => x.OrderNumber.Contains(search) || x.Customer.Name.Contains(search));
+            ordersQuery = ordersQuery.Where(order => order.OrderNumber.Contains(search) || order.Customer.Name.Contains(search));
         }
 
         var totalCount = await ordersQuery.CountAsync(cancellationToken);
 
         var items = await ordersQuery
-            .OrderByDescending(x => x.CreatedAt)
+            .OrderByDescending(order => order.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(x => new OrderListItemDto(
-                x.Id,
-                x.OrderNumber,
-                x.CustomerId,
-                x.Customer.Name,
-                x.WarehouseId,
-                x.Warehouse.Name,
-                x.Status,
-                x.CreatedAt,
-                x.Lines.Count))
+            .Select(order => new OrderListItemDto(
+                order.Id,
+                order.OrderNumber,
+                order.CustomerId,
+                order.Customer.Name,
+                order.WarehouseId,
+                order.Warehouse.Name,
+                order.Status,
+                order.CreatedAt,
+                order.Lines.Count))
             .ToListAsync(cancellationToken);
 
         return new PagedResult<OrderListItemDto>(items, page, pageSize, totalCount);
@@ -109,18 +109,18 @@ public sealed class OrderWorkflowService(AppDbContext dbContext) : IOrderWorkflo
     {
         return await dbContext.WarehouseOrders
             .AsNoTracking()
-            .Where(x => x.Id == orderId)
+            .Where(order => order.Id == orderId)
             .Select(ToOrderDetails())
             .FirstOrDefaultAsync(cancellationToken);
     }
 
     public async Task<OrderDetailsDto> ChangeStatusAsync(int orderId, ChangeOrderStatusRequest request, CancellationToken cancellationToken)
     {
-        var tx = await BeginTransactionIfRelationalAsync(cancellationToken);
+        var transaction = await BeginTransactionIfRelationalAsync(cancellationToken);
 
         var order = await dbContext.WarehouseOrders
-            .Include(x => x.Lines)
-            .FirstOrDefaultAsync(x => x.Id == orderId, cancellationToken)
+            .Include(orderToUpdate => orderToUpdate.Lines)
+            .FirstOrDefaultAsync(orderToUpdate => orderToUpdate.Id == orderId, cancellationToken)
             ?? throw new KeyNotFoundException("Order not found.");
 
         EnsureVersion(order, request.ExpectedVersion);
@@ -155,10 +155,10 @@ public sealed class OrderWorkflowService(AppDbContext dbContext) : IOrderWorkflo
         });
 
         await dbContext.SaveChangesAsync(cancellationToken);
-        if (tx is not null)
+        if (transaction is not null)
         {
-            await tx.CommitAsync(cancellationToken);
-            await tx.DisposeAsync();
+            await transaction.CommitAsync(cancellationToken);
+            await transaction.DisposeAsync();
         }
 
         return await GetOrderInternalAsync(orderId, cancellationToken);
@@ -177,14 +177,14 @@ public sealed class OrderWorkflowService(AppDbContext dbContext) : IOrderWorkflo
             throw new InvalidOperationException("At least one order is required.");
         }
 
-        var tx = await BeginTransactionIfRelationalAsync(cancellationToken);
+        var transaction = await BeginTransactionIfRelationalAsync(cancellationToken);
 
-        var orders = await dbContext.WarehouseOrders
-            .Include(x => x.Lines)
-            .Where(x => request.OrderIds.Contains(x.Id))
+        var ordersToPick = await dbContext.WarehouseOrders
+            .Include(order => order.Lines)
+            .Where(order => request.OrderIds.Contains(order.Id))
             .ToListAsync(cancellationToken);
 
-        if (orders.Count != request.OrderIds.Count)
+        if (ordersToPick.Count != request.OrderIds.Count)
         {
             throw new KeyNotFoundException("One or more orders not found.");
         }
@@ -195,19 +195,19 @@ public sealed class OrderWorkflowService(AppDbContext dbContext) : IOrderWorkflo
             Status = PickingTaskStatus.New
         };
 
-        foreach (var order in orders)
+        foreach (var order in ordersToPick)
         {
             if (order.Status is not (OrderStatus.Reserved or OrderStatus.PartiallyReserved or OrderStatus.Confirmed))
             {
                 throw new InvalidOperationException($"Order {order.OrderNumber} is not in a pickable status.");
             }
 
-            foreach (var line in order.Lines.Where(x => x.ReservedQuantity - x.PickedQuantity > 0))
+            foreach (var orderLine in order.Lines.Where(orderLine => orderLine.ReservedQuantity - orderLine.PickedQuantity > 0))
             {
                 pickingTask.Lines.Add(new PickingTaskLine
                 {
-                    OrderLineId = line.Id,
-                    Quantity = line.ReservedQuantity - line.PickedQuantity
+                    OrderLineId = orderLine.Id,
+                    Quantity = orderLine.ReservedQuantity - orderLine.PickedQuantity
                 });
             }
 
@@ -225,14 +225,14 @@ public sealed class OrderWorkflowService(AppDbContext dbContext) : IOrderWorkflo
         {
             EntityName = nameof(PickingTask),
             Action = "Created",
-            Details = $"Task {pickingTask.TaskNumber} created for {orders.Count} orders."
+            Details = $"Task {pickingTask.TaskNumber} created for {ordersToPick.Count} orders."
         });
 
         await dbContext.SaveChangesAsync(cancellationToken);
-        if (tx is not null)
+        if (transaction is not null)
         {
-            await tx.CommitAsync(cancellationToken);
-            await tx.DisposeAsync();
+            await transaction.CommitAsync(cancellationToken);
+            await transaction.DisposeAsync();
         }
 
         return await GetPickingTaskInternalAsync(pickingTask.Id, cancellationToken);
@@ -240,109 +240,109 @@ public sealed class OrderWorkflowService(AppDbContext dbContext) : IOrderWorkflo
 
     public async Task<PickingTaskDto> CompletePickingLineAsync(int pickingTaskLineId, CompletePickingLineRequest request, CancellationToken cancellationToken)
     {
-        var tx = await BeginTransactionIfRelationalAsync(cancellationToken);
+        var transaction = await BeginTransactionIfRelationalAsync(cancellationToken);
 
-        var line = await dbContext.PickingTaskLines
-            .Include(x => x.PickingTask)
-            .ThenInclude(x => x.Lines)
-            .Include(x => x.OrderLine)
-            .ThenInclude(x => x.Order)
-            .ThenInclude(x => x.Lines)
-            .FirstOrDefaultAsync(x => x.Id == pickingTaskLineId, cancellationToken)
+        var pickingTaskLine = await dbContext.PickingTaskLines
+            .Include(line => line.PickingTask)
+            .ThenInclude(pickingTask => pickingTask.Lines)
+            .Include(line => line.OrderLine)
+            .ThenInclude(orderLine => orderLine.Order)
+            .ThenInclude(order => order.Lines)
+            .FirstOrDefaultAsync(line => line.Id == pickingTaskLineId, cancellationToken)
             ?? throw new KeyNotFoundException("Picking line not found.");
 
-        EnsureVersion(line, request.ExpectedVersion);
+        EnsureVersion(pickingTaskLine, request.ExpectedVersion);
 
-        var remaining = line.Quantity - line.PickedQuantity;
-        if (request.Quantity <= 0 || request.Quantity > remaining)
+        var remainingQuantity = pickingTaskLine.Quantity - pickingTaskLine.PickedQuantity;
+        if (request.Quantity <= 0 || request.Quantity > remainingQuantity)
         {
             throw new InvalidOperationException("Invalid picked quantity.");
         }
 
-        var stock = await dbContext.StockBalances
-            .FirstOrDefaultAsync(x => x.ItemId == line.OrderLine.ItemId && x.WarehouseId == line.OrderLine.Order.WarehouseId, cancellationToken)
+        var stockBalance = await dbContext.StockBalances
+            .FirstOrDefaultAsync(stock => stock.ItemId == pickingTaskLine.OrderLine.ItemId && stock.WarehouseId == pickingTaskLine.OrderLine.Order.WarehouseId, cancellationToken)
             ?? throw new KeyNotFoundException("Stock record not found.");
 
-        line.PickedQuantity += request.Quantity;
-        line.OrderLine.PickedQuantity += request.Quantity;
+        pickingTaskLine.PickedQuantity += request.Quantity;
+        pickingTaskLine.OrderLine.PickedQuantity += request.Quantity;
 
-        stock.ReservedQuantity = Math.Max(0, stock.ReservedQuantity - request.Quantity);
-        stock.AvailableQuantity = Math.Max(0, stock.AvailableQuantity - request.Quantity);
+        stockBalance.ReservedQuantity = Math.Max(0, stockBalance.ReservedQuantity - request.Quantity);
+        stockBalance.AvailableQuantity = Math.Max(0, stockBalance.AvailableQuantity - request.Quantity);
 
-        line.PickingTask.Status = line.PickingTask.Lines.All(x => x.PickedQuantity >= x.Quantity)
+        pickingTaskLine.PickingTask.Status = pickingTaskLine.PickingTask.Lines.All(taskLine => taskLine.PickedQuantity >= taskLine.Quantity)
             ? PickingTaskStatus.Completed
             : PickingTaskStatus.InProgress;
 
-        if (line.OrderLine.Order.Lines.All(x => x.PickedQuantity >= x.Quantity))
+        if (pickingTaskLine.OrderLine.Order.Lines.All(orderLine => orderLine.PickedQuantity >= orderLine.Quantity))
         {
-            line.OrderLine.Order.Status = OrderStatus.Picked;
+            pickingTaskLine.OrderLine.Order.Status = OrderStatus.Picked;
         }
 
         dbContext.AuditLogs.Add(new AuditLog
         {
             EntityName = nameof(PickingTaskLine),
-            EntityId = line.Id,
+            EntityId = pickingTaskLine.Id,
             Action = "Picked",
             Details = $"Picked quantity {request.Quantity}."
         });
 
         await dbContext.SaveChangesAsync(cancellationToken);
-        if (tx is not null)
+        if (transaction is not null)
         {
-            await tx.CommitAsync(cancellationToken);
-            await tx.DisposeAsync();
+            await transaction.CommitAsync(cancellationToken);
+            await transaction.DisposeAsync();
         }
 
-        return await GetPickingTaskInternalAsync(line.PickingTaskId, cancellationToken);
+        return await GetPickingTaskInternalAsync(pickingTaskLine.PickingTaskId, cancellationToken);
     }
 
     public async Task<IReadOnlyCollection<StockOverviewDto>> GetStockOverviewAsync(int? warehouseId, CancellationToken cancellationToken)
     {
-        var query = dbContext.StockBalances
+        var stockOverviewQuery = dbContext.StockBalances
             .AsNoTracking()
-            .Include(x => x.Item)
-            .Include(x => x.Warehouse)
+            .Include(stock => stock.Item)
+            .Include(stock => stock.Warehouse)
             .AsQueryable();
 
         if (warehouseId.HasValue)
         {
-            query = query.Where(x => x.WarehouseId == warehouseId);
+            stockOverviewQuery = stockOverviewQuery.Where(stock => stock.WarehouseId == warehouseId);
         }
 
-        return await query
-            .OrderBy(x => x.Item.Sku)
-            .Select(x => new StockOverviewDto(
-                x.ItemId,
-                x.Item.Sku,
-                x.Item.Name,
-                x.WarehouseId,
-                x.Warehouse.Name,
-                x.AvailableQuantity,
-                x.ReservedQuantity,
-                x.AvailableQuantity - x.ReservedQuantity < 0))
+        return await stockOverviewQuery
+            .OrderBy(stock => stock.Item.Sku)
+            .Select(stock => new StockOverviewDto(
+                stock.ItemId,
+                stock.Item.Sku,
+                stock.Item.Name,
+                stock.WarehouseId,
+                stock.Warehouse.Name,
+                stock.AvailableQuantity,
+                stock.ReservedQuantity,
+                stock.AvailableQuantity - stock.ReservedQuantity < 0))
             .ToListAsync(cancellationToken);
     }
 
     public async Task<DashboardDto> GetDashboardAsync(DateOnly day, CancellationToken cancellationToken)
     {
-        var start = day.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
-        var end = day.AddDays(1).ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
+        var dayStartUtc = day.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
+        var dayEndUtc = day.AddDays(1).ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
 
-        var todayOrderCount = await dbContext.WarehouseOrders.AsNoTracking().CountAsync(x => x.CreatedAt >= start && x.CreatedAt < end, cancellationToken);
-        var overdueTasks = await dbContext.PickingTasks.AsNoTracking().CountAsync(x => x.Status != PickingTaskStatus.Completed && x.CreatedAt < DateTime.UtcNow.AddHours(-4), cancellationToken);
-        var unfulfilledOrders = await dbContext.WarehouseOrders.AsNoTracking().CountAsync(x => x.Status != OrderStatus.Shipped && x.Status != OrderStatus.Cancelled, cancellationToken);
+        var todayOrderCount = await dbContext.WarehouseOrders.AsNoTracking().CountAsync(order => order.CreatedAt >= dayStartUtc && order.CreatedAt < dayEndUtc, cancellationToken);
+        var overdueTasks = await dbContext.PickingTasks.AsNoTracking().CountAsync(pickingTask => pickingTask.Status != PickingTaskStatus.Completed && pickingTask.CreatedAt < DateTime.UtcNow.AddHours(-4), cancellationToken);
+        var unfulfilledOrders = await dbContext.WarehouseOrders.AsNoTracking().CountAsync(order => order.Status != OrderStatus.Shipped && order.Status != OrderStatus.Cancelled, cancellationToken);
 
-        var pickingCycleDurations = await dbContext.WarehouseOrders
+        var ordersWithPickingStart = await dbContext.WarehouseOrders
             .AsNoTracking()
-            .Where(x => x.PickingStartedAt.HasValue)
-            .Select(x => new { x.CreatedAt, x.PickingStartedAt })
+            .Where(order => order.PickingStartedAt.HasValue)
+            .Select(order => new { order.CreatedAt, order.PickingStartedAt })
             .ToListAsync(cancellationToken);
 
-        var avgMinutes = pickingCycleDurations.Count == 0
+        var averageMinutesToPickingStart = ordersWithPickingStart.Count == 0
             ? 0
-            : pickingCycleDurations.Average(x => (x.PickingStartedAt!.Value - x.CreatedAt).TotalMinutes);
+            : ordersWithPickingStart.Average(order => (order.PickingStartedAt!.Value - order.CreatedAt).TotalMinutes);
 
-        return new DashboardDto(todayOrderCount, overdueTasks, unfulfilledOrders, avgMinutes);
+        return new DashboardDto(todayOrderCount, overdueTasks, unfulfilledOrders, averageMinutesToPickingStart);
     }
 
     private async Task<IDbContextTransaction?> BeginTransactionIfRelationalAsync(CancellationToken cancellationToken)
@@ -354,41 +354,41 @@ public sealed class OrderWorkflowService(AppDbContext dbContext) : IOrderWorkflo
 
     private async Task ReserveAsync(WarehouseOrder order, CancellationToken cancellationToken)
     {
-        foreach (var line in order.Lines)
+        foreach (var orderLine in order.Lines)
         {
-            var toReserve = line.Quantity - line.ReservedQuantity;
-            if (toReserve <= 0)
+            var quantityToReserve = orderLine.Quantity - orderLine.ReservedQuantity;
+            if (quantityToReserve <= 0)
             {
                 continue;
             }
 
-            var stock = await dbContext.StockBalances
-                .FirstOrDefaultAsync(x => x.ItemId == line.ItemId && x.WarehouseId == order.WarehouseId, cancellationToken)
-                ?? throw new InvalidOperationException($"Stock not found for item {line.ItemId} and warehouse {order.WarehouseId}.");
+            var stockBalance = await dbContext.StockBalances
+                .FirstOrDefaultAsync(stock => stock.ItemId == orderLine.ItemId && stock.WarehouseId == order.WarehouseId, cancellationToken)
+                ?? throw new InvalidOperationException($"Stock not found for item {orderLine.ItemId} and warehouse {order.WarehouseId}.");
 
-            var free = Math.Max(0, stock.AvailableQuantity - stock.ReservedQuantity);
-            var reservable = Math.Min(free, toReserve);
+            var availableUnreservedQuantity = Math.Max(0, stockBalance.AvailableQuantity - stockBalance.ReservedQuantity);
+            var reservableQuantity = Math.Min(availableUnreservedQuantity, quantityToReserve);
 
-            if (reservable <= 0)
+            if (reservableQuantity <= 0)
             {
                 continue;
             }
 
-            stock.ReservedQuantity += reservable;
-            line.ReservedQuantity += reservable;
+            stockBalance.ReservedQuantity += reservableQuantity;
+            orderLine.ReservedQuantity += reservableQuantity;
 
             dbContext.StockReservations.Add(new StockReservation
             {
-                OrderLineId = line.Id,
-                ItemId = line.ItemId,
+                OrderLineId = orderLine.Id,
+                ItemId = orderLine.ItemId,
                 WarehouseId = order.WarehouseId,
-                Quantity = reservable
+                Quantity = reservableQuantity
             });
         }
 
-        order.Status = order.Lines.All(x => x.ReservedQuantity >= x.Quantity)
+        order.Status = order.Lines.All(orderLine => orderLine.ReservedQuantity >= orderLine.Quantity)
             ? OrderStatus.Reserved
-            : order.Lines.Any(x => x.ReservedQuantity > 0)
+            : order.Lines.Any(orderLine => orderLine.ReservedQuantity > 0)
                 ? OrderStatus.PartiallyReserved
                 : OrderStatus.Confirmed;
     }
@@ -405,7 +405,7 @@ public sealed class OrderWorkflowService(AppDbContext dbContext) : IOrderWorkflo
             throw new InvalidOperationException("Shipped order cannot be cancelled.");
         }
 
-        var transitions = new Dictionary<OrderStatus, OrderStatus[]>
+        var allowedTransitionsByStatus = new Dictionary<OrderStatus, OrderStatus[]>
         {
             [OrderStatus.New] = [OrderStatus.Confirmed, OrderStatus.Cancelled],
             [OrderStatus.Confirmed] = [OrderStatus.PartiallyReserved, OrderStatus.Reserved, OrderStatus.Cancelled],
@@ -417,7 +417,7 @@ public sealed class OrderWorkflowService(AppDbContext dbContext) : IOrderWorkflo
             [OrderStatus.Cancelled] = [OrderStatus.Cancelled]
         };
 
-        if (!transitions.TryGetValue(current, out var allowed) || !allowed.Contains(target))
+        if (!allowedTransitionsByStatus.TryGetValue(current, out var allowedTargetStatuses) || !allowedTargetStatuses.Contains(target))
         {
             throw new InvalidOperationException($"Invalid status transition from {current} to {target}.");
         }
@@ -435,7 +435,7 @@ public sealed class OrderWorkflowService(AppDbContext dbContext) : IOrderWorkflo
     {
         return await dbContext.WarehouseOrders
             .AsNoTracking()
-            .Where(x => x.Id == orderId)
+            .Where(order => order.Id == orderId)
             .Select(ToOrderDetails())
             .FirstAsync(cancellationToken);
     }
@@ -444,40 +444,40 @@ public sealed class OrderWorkflowService(AppDbContext dbContext) : IOrderWorkflo
     {
         return await dbContext.PickingTasks
             .AsNoTracking()
-            .Where(x => x.Id == taskId)
-            .Select(x => new PickingTaskDto(
-                x.Id,
-                x.TaskNumber,
-                x.Status.ToString(),
-                x.CreatedAt,
-                x.Lines.Select(l => new PickingTaskLineDto(
-                    l.Id,
-                    l.OrderLineId,
-                    l.OrderLine.ItemId,
-                    l.OrderLine.Item.Name,
-                    l.Quantity,
-                    l.PickedQuantity)).ToList()))
+            .Where(pickingTask => pickingTask.Id == taskId)
+            .Select(pickingTask => new PickingTaskDto(
+                pickingTask.Id,
+                pickingTask.TaskNumber,
+                pickingTask.Status.ToString(),
+                pickingTask.CreatedAt,
+                pickingTask.Lines.Select(pickingTaskLine => new PickingTaskLineDto(
+                    pickingTaskLine.Id,
+                    pickingTaskLine.OrderLineId,
+                    pickingTaskLine.OrderLine.ItemId,
+                    pickingTaskLine.OrderLine.Item.Name,
+                    pickingTaskLine.Quantity,
+                    pickingTaskLine.PickedQuantity)).ToList()))
             .FirstAsync(cancellationToken);
     }
 
     private static Expression<Func<WarehouseOrder, OrderDetailsDto>> ToOrderDetails()
     {
-        return x => new OrderDetailsDto(
-            x.Id,
-            x.OrderNumber,
-            x.CustomerId,
-            x.Customer.Name,
-            x.WarehouseId,
-            x.Warehouse.Name,
-            x.Status,
-            x.CreatedAt,
-            x.Version,
-            x.Lines.Select(l => new OrderLineDto(
-                l.Id,
-                l.ItemId,
-                l.Item.Name,
-                l.Quantity,
-                l.ReservedQuantity,
-                l.PickedQuantity)).ToList());
+        return order => new OrderDetailsDto(
+            order.Id,
+            order.OrderNumber,
+            order.CustomerId,
+            order.Customer.Name,
+            order.WarehouseId,
+            order.Warehouse.Name,
+            order.Status,
+            order.CreatedAt,
+            order.Version,
+            order.Lines.Select(orderLine => new OrderLineDto(
+                orderLine.Id,
+                orderLine.ItemId,
+                orderLine.Item.Name,
+                orderLine.Quantity,
+                orderLine.ReservedQuantity,
+                orderLine.PickedQuantity)).ToList());
     }
 }

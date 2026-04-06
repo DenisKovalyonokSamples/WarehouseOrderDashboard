@@ -98,14 +98,14 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public void UpdateSelectedOrders(IEnumerable<int> orderIds)
     {
         SelectedOrderIds.Clear();
-        foreach (var orderId in orderIds)
+        foreach (var selectedOrderId in orderIds)
         {
-            SelectedOrderIds.Add(orderId);
+            SelectedOrderIds.Add(selectedOrderId);
         }
 
-        if (CreatePickingTaskCommand is AsyncRelayCommand cmd)
+        if (CreatePickingTaskCommand is AsyncRelayCommand createPickingTaskCommand)
         {
-            cmd.RaiseCanExecuteChanged();
+            createPickingTaskCommand.RaiseCanExecuteChanged();
         }
     }
 
@@ -113,11 +113,11 @@ public sealed class MainViewModel : INotifyPropertyChanged
     {
         try
         {
-            var page = await _apiClient.GetOrdersAsync(SearchText, _page, 100, CancellationToken.None);
+            var ordersPage = await _apiClient.GetOrdersAsync(SearchText, _page, 100, CancellationToken.None);
             Orders.Clear();
-            foreach (var item in page.Items)
+            foreach (var order in ordersPage.Items)
             {
-                Orders.Add(item);
+                Orders.Add(order);
             }
 
             StatusText = $"Loaded {Orders.Count} orders.";
@@ -169,8 +169,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
         try
         {
-            var task = await _apiClient.CreatePickingTaskAsync(SelectedOrderIds.ToArray(), CancellationToken.None);
-            StatusText = $"Created picking task {task.TaskNumber}.";
+            var createdPickingTask = await _apiClient.CreatePickingTaskAsync(SelectedOrderIds.ToArray(), CancellationToken.None);
+            StatusText = $"Created picking task {createdPickingTask.TaskNumber}.";
             await RefreshOrdersAsync();
             await RefreshDashboardAsync();
         }

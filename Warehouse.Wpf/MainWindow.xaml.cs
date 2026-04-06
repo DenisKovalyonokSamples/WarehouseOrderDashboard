@@ -31,24 +31,24 @@ namespace Warehouse.Wpf
 
         private static Uri ResolveApiBaseAddress()
         {
-            const string apiBaseAddressEnvironmentVariable = "WAREHOUSE_API_BASE_URL";
-            var fromEnvironment = Environment.GetEnvironmentVariable(apiBaseAddressEnvironmentVariable);
-            if (Uri.TryCreate(fromEnvironment, UriKind.Absolute, out var environmentUri))
+            const string apiBaseAddressEnvironmentVariableName = "WAREHOUSE_API_BASE_URL";
+            var environmentApiBaseAddress = Environment.GetEnvironmentVariable(apiBaseAddressEnvironmentVariableName);
+            if (Uri.TryCreate(environmentApiBaseAddress, UriKind.Absolute, out var environmentApiBaseAddressUri))
             {
-                return EnsureTrailingSlash(environmentUri);
+                return EnsureTrailingSlash(environmentApiBaseAddressUri);
             }
 
             var appSettingsPath = Path.Combine(AppContext.BaseDirectory, "appsettings.json");
             if (File.Exists(appSettingsPath))
             {
-                using var stream = File.OpenRead(appSettingsPath);
-                using var json = JsonDocument.Parse(stream);
+                using var appSettingsStream = File.OpenRead(appSettingsPath);
+                using var appSettingsJson = JsonDocument.Parse(appSettingsStream);
 
-                if (json.RootElement.TryGetProperty("Api", out var apiElement)
+                if (appSettingsJson.RootElement.TryGetProperty("Api", out var apiElement)
                     && apiElement.TryGetProperty("BaseAddress", out var baseAddressElement)
-                    && Uri.TryCreate(baseAddressElement.GetString(), UriKind.Absolute, out var configUri))
+                    && Uri.TryCreate(baseAddressElement.GetString(), UriKind.Absolute, out var configuredApiBaseAddressUri))
                 {
-                    return EnsureTrailingSlash(configUri);
+                    return EnsureTrailingSlash(configuredApiBaseAddressUri);
                 }
             }
 
@@ -57,13 +57,13 @@ namespace Warehouse.Wpf
 
         private static Uri EnsureTrailingSlash(Uri uri)
         {
-            var value = uri.ToString();
-            if (!value.EndsWith('/'))
+            var uriText = uri.ToString();
+            if (!uriText.EndsWith('/'))
             {
-                value += "/";
+                uriText += "/";
             }
 
-            return new Uri(value, UriKind.Absolute);
+            return new Uri(uriText, UriKind.Absolute);
         }
 
         private void OrdersGrid_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
