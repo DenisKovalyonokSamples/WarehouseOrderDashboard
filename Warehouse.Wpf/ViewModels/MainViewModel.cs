@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Net.Http;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using Warehouse.Wpf.Infrastructure;
@@ -82,9 +83,16 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
     public async Task LoadAsync()
     {
-        await RefreshOrdersAsync();
-        await RefreshStockAsync();
-        await RefreshDashboardAsync();
+        try
+        {
+            await RefreshOrdersAsync();
+            await RefreshStockAsync();
+            await RefreshDashboardAsync();
+        }
+        catch (HttpRequestException)
+        {
+            StatusText = "API unavailable. Start Warehouse.Api or update WAREHOUSE_API_BASE_URL/appsettings.json.";
+        }
     }
 
     public void UpdateSelectedOrders(IEnumerable<int> orderIds)
@@ -103,32 +111,53 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
     private async Task RefreshOrdersAsync()
     {
-        var page = await _apiClient.GetOrdersAsync(SearchText, _page, 100, CancellationToken.None);
-        Orders.Clear();
-        foreach (var item in page.Items)
+        try
         {
-            Orders.Add(item);
-        }
+            var page = await _apiClient.GetOrdersAsync(SearchText, _page, 100, CancellationToken.None);
+            Orders.Clear();
+            foreach (var item in page.Items)
+            {
+                Orders.Add(item);
+            }
 
-        StatusText = $"Loaded {Orders.Count} orders.";
+            StatusText = $"Loaded {Orders.Count} orders.";
+        }
+        catch (HttpRequestException)
+        {
+            StatusText = "Unable to load orders. API is unavailable.";
+        }
     }
 
     private async Task RefreshStockAsync()
     {
-        var stockRows = await _apiClient.GetStockAsync(CancellationToken.None);
-        Stock.Clear();
-        foreach (var row in stockRows)
+        try
         {
-            Stock.Add(row);
-        }
+            var stockRows = await _apiClient.GetStockAsync(CancellationToken.None);
+            Stock.Clear();
+            foreach (var row in stockRows)
+            {
+                Stock.Add(row);
+            }
 
-        StatusText = $"Loaded {Stock.Count} stock rows.";
+            StatusText = $"Loaded {Stock.Count} stock rows.";
+        }
+        catch (HttpRequestException)
+        {
+            StatusText = "Unable to load stock. API is unavailable.";
+        }
     }
 
     private async Task RefreshDashboardAsync()
     {
-        Dashboard = await _apiClient.GetDashboardAsync(CancellationToken.None);
-        StatusText = "Dashboard updated.";
+        try
+        {
+            Dashboard = await _apiClient.GetDashboardAsync(CancellationToken.None);
+            StatusText = "Dashboard updated.";
+        }
+        catch (HttpRequestException)
+        {
+            StatusText = "Unable to load dashboard. API is unavailable.";
+        }
     }
 
     private async Task CreatePickingTaskAsync()
@@ -138,10 +167,17 @@ public sealed class MainViewModel : INotifyPropertyChanged
             return;
         }
 
-        var task = await _apiClient.CreatePickingTaskAsync(SelectedOrderIds.ToArray(), CancellationToken.None);
-        StatusText = $"Created picking task {task.TaskNumber}.";
-        await RefreshOrdersAsync();
-        await RefreshDashboardAsync();
+        try
+        {
+            var task = await _apiClient.CreatePickingTaskAsync(SelectedOrderIds.ToArray(), CancellationToken.None);
+            StatusText = $"Created picking task {task.TaskNumber}.";
+            await RefreshOrdersAsync();
+            await RefreshDashboardAsync();
+        }
+        catch (HttpRequestException)
+        {
+            StatusText = "Unable to create picking task. API is unavailable.";
+        }
     }
 
     private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
