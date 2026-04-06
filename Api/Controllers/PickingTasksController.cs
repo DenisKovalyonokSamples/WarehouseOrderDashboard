@@ -12,6 +12,16 @@ namespace Warehouse.Api.Controllers;
 public sealed class PickingTasksController(IOrderWorkflowService service) : ControllerBase
 {
     /// <summary>
+    /// Returns picking task list data.
+    /// </summary>
+    [HttpGet]
+    public async Task<ActionResult<IReadOnlyCollection<PickingTaskListItemDto>>> List([FromQuery] bool activeOnly = true, CancellationToken cancellationToken = default)
+    {
+        var result = await service.GetPickingTasksAsync(activeOnly, cancellationToken);
+        return Ok(result);
+    }
+
+    /// <summary>
     /// Creates a new picking task from selected orders.
     /// </summary>
     [HttpPost]

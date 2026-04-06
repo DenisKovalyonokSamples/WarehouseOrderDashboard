@@ -27,6 +27,18 @@ public sealed record PickingTaskDto(
     IReadOnlyCollection<PickingTaskLineDto> Lines);
 
 /// <summary>
+/// Represents picking task list data.
+/// </summary>
+public sealed record PickingTaskListItemDto(
+    int Id,
+    string TaskNumber,
+    string Status,
+    DateTime CreatedAt,
+    int LineCount,
+    decimal TotalQuantity,
+    decimal PickedQuantity);
+
+/// <summary>
 /// Represents request data for completing a picking task line.
 /// </summary>
 public sealed record CompletePickingLineRequest(decimal Quantity, long ExpectedVersion);

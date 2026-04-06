@@ -11,6 +11,7 @@
             <TextBox Width="220" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,8,0" />
             <Button Content="Refresh Orders" Command="{Binding RefreshOrdersCommand}" Margin="0,0,8,0" />
             <Button Content="Create Picking Task" Command="{Binding CreatePickingTaskCommand}" Margin="0,0,8,0" />
+            <Button Content="Refresh Picking Tasks" Command="{Binding RefreshPickingTasksCommand}" Margin="0,0,8,0" />
             <Button Content="Refresh Dashboard" Command="{Binding RefreshDashboardCommand}" />
         </StackPanel>
 
@@ -49,6 +50,24 @@
                         <DataGridTextColumn Header="Available" Binding="{Binding AvailableQuantity}" Width="*" />
                         <DataGridTextColumn Header="Reserved" Binding="{Binding ReservedQuantity}" Width="*" />
                         <DataGridCheckBoxColumn Header="Shortage" Binding="{Binding HasShortage}" Width="Auto" />
+                    </DataGrid.Columns>
+                </DataGrid>
+            </TabItem>
+
+            <TabItem Header="Picking Tasks">
+                <DataGrid ItemsSource="{Binding PickingTasks}"
+                          AutoGenerateColumns="False"
+                          IsReadOnly="True"
+                          EnableRowVirtualization="True"
+                          VirtualizingPanel.IsVirtualizing="True"
+                          VirtualizingPanel.VirtualizationMode="Recycling">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Task #" Binding="{Binding TaskNumber}" Width="*" />
+                        <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="*" />
+                        <DataGridTextColumn Header="Lines" Binding="{Binding LineCount}" Width="Auto" />
+                        <DataGridTextColumn Header="Total Qty" Binding="{Binding TotalQuantity}" Width="*" />
+                        <DataGridTextColumn Header="Picked Qty" Binding="{Binding PickedQuantity}" Width="*" />
+                        <DataGridTextColumn Header="Created" Binding="{Binding CreatedAt}" Width="2*" />
                     </DataGrid.Columns>
                 </DataGrid>
             </TabItem>

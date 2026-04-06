@@ -28,6 +28,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         _apiClient = apiClient;
         RefreshOrdersCommand = new AsyncRelayCommand(RefreshOrdersAsync);
         RefreshStockCommand = new AsyncRelayCommand(RefreshStockAsync);
+        RefreshPickingTasksCommand = new AsyncRelayCommand(RefreshPickingTasksAsync);
         RefreshDashboardCommand = new AsyncRelayCommand(RefreshDashboardAsync);
         CreatePickingTaskCommand = new AsyncRelayCommand(CreatePickingTaskAsync, () => SelectedOrderIds.Count > 0);
     }
@@ -39,10 +40,12 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
     public ObservableCollection<OrderListItemDto> Orders { get; } = [];
     public ObservableCollection<StockOverviewDto> Stock { get; } = [];
+    public ObservableCollection<PickingTaskListItemDto> PickingTasks { get; } = [];
     public ObservableCollection<int> SelectedOrderIds { get; } = [];
 
     public ICommand RefreshOrdersCommand { get; }
     public ICommand RefreshStockCommand { get; }
+    public ICommand RefreshPickingTasksCommand { get; }
     public ICommand RefreshDashboardCommand { get; }
     public ICommand CreatePickingTaskCommand { get; }
 
@@ -99,11 +102,31 @@ public sealed class MainViewModel : INotifyPropertyChanged
         {
             await RefreshOrdersAsync();
             await RefreshStockAsync();
+            await RefreshPickingTasksAsync();
             await RefreshDashboardAsync();
         }
         catch (HttpRequestException)
         {
             StatusText = "API unavailable. Start Warehouse.Api or update WAREHOUSE_API_BASE_URL/appsettings.json.";
+        }
+    }
+
+    private async Task RefreshPickingTasksAsync()
+    {
+        try
+        {
+            var tasks = await _apiClient.GetPickingTasksAsync(CancellationToken.None);
+            PickingTasks.Clear();
+            foreach (var task in tasks)
+            {
+                PickingTasks.Add(task);
+            }
+
+            StatusText = $"Loaded {PickingTasks.Count} picking tasks.";
+        }
+        catch (HttpRequestException)
+        {
+            StatusText = "Unable to load picking tasks. API is unavailable.";
         }
     }
 
@@ -187,6 +210,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
             var createdPickingTask = await _apiClient.CreatePickingTaskAsync(SelectedOrderIds.ToArray(), CancellationToken.None);
             StatusText = $"Created picking task {createdPickingTask.TaskNumber}.";
             await RefreshOrdersAsync();
+            await RefreshPickingTasksAsync();
             await RefreshDashboardAsync();
         }
         catch (InvalidOperationException ex)

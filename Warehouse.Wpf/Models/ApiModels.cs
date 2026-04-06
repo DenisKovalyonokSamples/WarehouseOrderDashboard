@@ -65,6 +65,20 @@ public sealed class PickingTaskDto
 }
 
 /// <summary>
+/// Represents a row in the picking tasks list.
+/// </summary>
+public sealed class PickingTaskListItemDto
+{
+    public int Id { get; set; }
+    public string TaskNumber { get; set; } = string.Empty;
+    public string Status { get; set; } = string.Empty;
+    public DateTime CreatedAt { get; set; }
+    public int LineCount { get; set; }
+    public decimal TotalQuantity { get; set; }
+    public decimal PickedQuantity { get; set; }
+}
+
+/// <summary>
 /// Represents dashboard summary values.
 /// </summary>
 public sealed class DashboardDto

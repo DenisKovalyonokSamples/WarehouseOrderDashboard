@@ -43,6 +43,11 @@ public interface IOrderWorkflowService
     Task<PickingTaskDto> CompletePickingLineAsync(int pickingTaskLineId, CompletePickingLineRequest request, CancellationToken cancellationToken);
 
     /// <summary>
+    /// Returns picking tasks, optionally only active tasks.
+    /// </summary>
+    Task<IReadOnlyCollection<PickingTaskListItemDto>> GetPickingTasksAsync(bool activeOnly, CancellationToken cancellationToken);
+
+    /// <summary>
     /// Returns stock overview, optionally filtered by warehouse.
     /// </summary>
     Task<IReadOnlyCollection<StockOverviewDto>> GetStockOverviewAsync(int? warehouseId, CancellationToken cancellationToken);

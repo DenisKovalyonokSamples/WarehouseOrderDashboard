@@ -314,6 +314,33 @@ public sealed class OrderWorkflowService(AppDbContext dbContext) : IOrderWorkflo
     }
 
     /// <inheritdoc />
+    public async Task<IReadOnlyCollection<PickingTaskListItemDto>> GetPickingTasksAsync(bool activeOnly, CancellationToken cancellationToken)
+    {
+        var pickingTasksQuery = dbContext.PickingTasks
+            .AsNoTracking()
+            .AsQueryable();
+
+        if (activeOnly)
+        {
+            pickingTasksQuery = pickingTasksQuery.Where(pickingTask =>
+                pickingTask.Status != PickingTaskStatus.Completed &&
+                pickingTask.Status != PickingTaskStatus.Cancelled);
+        }
+
+        return await pickingTasksQuery
+            .OrderByDescending(pickingTask => pickingTask.CreatedAt)
+            .Select(pickingTask => new PickingTaskListItemDto(
+                pickingTask.Id,
+                pickingTask.TaskNumber,
+                pickingTask.Status.ToString(),
+                pickingTask.CreatedAt,
+                pickingTask.Lines.Count,
+                pickingTask.Lines.Sum(pickingTaskLine => (decimal?)pickingTaskLine.Quantity) ?? 0,
+                pickingTask.Lines.Sum(pickingTaskLine => (decimal?)pickingTaskLine.PickedQuantity) ?? 0))
+            .ToListAsync(cancellationToken);
+    }
+
+    /// <inheritdoc />
     public async Task<IReadOnlyCollection<StockOverviewDto>> GetStockOverviewAsync(int? warehouseId, CancellationToken cancellationToken)
     {
         var stockOverviewQuery = dbContext.StockBalances

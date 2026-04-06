@@ -71,6 +71,13 @@ public sealed class WarehouseApiClient(HttpClient httpClient) : IWarehouseApiCli
             ?? new PickingTaskDto();
     }
 
+    /// <inheritdoc />
+    public async Task<IReadOnlyCollection<PickingTaskListItemDto>> GetPickingTasksAsync(CancellationToken cancellationToken)
+    {
+        return await _httpClient.GetFromJsonAsync<IReadOnlyCollection<PickingTaskListItemDto>>("api/picking-tasks?activeOnly=true", cancellationToken)
+            ?? Array.Empty<PickingTaskListItemDto>();
+    }
+
     private sealed class ApiProblemDetails
     {
         public string? Title { get; set; }

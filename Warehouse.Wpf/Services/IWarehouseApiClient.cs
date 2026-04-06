@@ -26,4 +26,9 @@ public interface IWarehouseApiClient
     /// Creates a picking task for selected order identifiers.
     /// </summary>
     Task<PickingTaskDto> CreatePickingTaskAsync(IReadOnlyCollection<int> orderIds, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Returns picking tasks for the UI.
+    /// </summary>
+    Task<IReadOnlyCollection<PickingTaskListItemDto>> GetPickingTasksAsync(CancellationToken cancellationToken);
 }
